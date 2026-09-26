@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Architect"
+description = "An interactive workspace for shaping product ideas, coordinating specialized agents, reviewing code, connecting project context, and promoting approved work."
+version = "1.0.0"
+id = "artifacts/architect-2"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23080
+
+[services.development]
+run = "pnpm --filter @workspace/architect-2 run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/architect-2", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/architect-2/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23080"
+BASE_PATH = "/"
