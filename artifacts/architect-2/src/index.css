@@ -366,61 +366,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   }
 }
 
-/* Workspace utility placement */
-@media (min-width: 640px) {
-  aside:has([data-testid='input-copilot-chat']) label:has([data-testid='select-framework']) {
-    position: fixed;
-    top: 78px;
-    right: 326px;
-    z-index: 30;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    border: 1px solid hsl(var(--border));
-    border-radius: 0.5rem;
-    background: hsl(var(--sidebar));
-    padding: 0.25rem 0.35rem 0.25rem 0.6rem;
-    box-shadow: 0 8px 24px hsl(220 35% 2% / 0.24);
-  }
-
-  aside:has([data-testid='input-copilot-chat']) > div:nth-child(2) {
-    display: contents;
-  }
-
-  aside:has([data-testid='input-copilot-chat']) > div:nth-child(3) {
-    order: 2;
-  }
-
-  aside:has([data-testid='input-copilot-chat']) > div:nth-child(2) > div.border-t {
-    order: 3;
-    border-top-color: hsl(var(--border) / 0.9);
-    background: hsl(var(--sidebar));
-    padding: 1rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  aside:has([data-testid='input-copilot-chat']) label:has([data-testid='select-framework']) {
-    top: 196px;
-    right: auto;
-    left: 12px;
-    width: 194px;
-    justify-content: space-between;
-  }
-}
-
+/* The legacy workspace keeps its prototype framework control out of the visible UI.
+   Framework selection now belongs to the Agents page and agent builder. */
 aside:has([data-testid='input-copilot-chat']) label:has([data-testid='select-framework']) {
   display: none !important;
-}
-
-.framework-nav-section {
-  position: static;
-  width: 100%;
-  flex-shrink: 0;
-  margin-top: 0.75rem;
-  border: 1px solid hsl(var(--border));
-  border-radius: 0.75rem;
-  background: hsl(var(--sidebar));
-  padding: 0.75rem;
-  box-shadow: 0 8px 24px hsl(220 35% 2% / 0.24);
 }

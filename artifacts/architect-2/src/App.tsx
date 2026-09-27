@@ -4,13 +4,25 @@ import {
   Circle, CircleDot, Code2, Command, Copy, ExternalLink, Eye, FileCode2, FolderGit2,
   GitBranch, Github, Globe2, Grid2X2, Layers3, LayoutDashboard, Link2, Loader2, LockKeyhole,
   LogIn, Menu, MessageSquare, MoreHorizontal, Package, PanelRightClose, PanelRightOpen,
-  Play, Plus, RefreshCw, Rocket, Search, Send, Settings2, ShieldCheck, Sparkles, SquareTerminal,
+  Play, Plus, RefreshCw, Rocket, Search, Send, Settings2, ShieldCheck, Sparkles,
   Terminal, ToggleLeft, ToggleRight, Trash2, Upload, UserRound, WandSparkles, X, Zap
 } from "lucide-react";
+import { AgentBuilder, type AgentDraft } from "@/components/agent-builder";
 
 type Screen = "landing" | "login" | "mode" | "hub" | "launchpad" | "prompt" | "import" | "workspace" | "agents" | "code" | "integrations" | "deployments" | "activity" | "settings";
 type Mode = "creator" | "developer";
 type WorkspaceTab = "preview" | "review" | "canvas";
+type AgentItem = {
+  name: string;
+  role: string;
+  framework: string;
+  model?: string;
+  status: string;
+  tone: "teal" | "amber" | "violet" | "default";
+  icon: typeof WandSparkles;
+  output: string;
+  tools?: string[];
+};
 
 const integrations = ["Gmail", "Slack", "Notion", "GitHub", "Google Drive", "Jira"];
 const planStatuses = [
@@ -152,7 +164,7 @@ function Shell({ children, go, mode }: { children: ReactNode; go: (s: Screen) =>
         <button onClick={() => go("hub")} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold ${!developer ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent"}`} data-testid="nav-projects"><Grid2X2 size={16} /> {developer ? "Overview" : "Projects"}</button>
         <button onClick={() => go("launchpad")} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground" data-testid="nav-new-project"><Plus size={16} /> {developer ? "New build" : "New project"}</button>
       </nav>
-      <FrameworkNavSection go={go} mode={mode} />
+      <SurfaceNavSection go={go} mode={mode} />
       <div className="mt-auto space-y-1">
         <button onClick={() => go("settings")} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground" data-testid="button-settings"><Settings2 size={16} /> Settings</button>
         <button onClick={() => go("landing")} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground" data-testid="button-signout"><ArrowLeft size={16} /> Sign out</button>
@@ -291,7 +303,7 @@ function ImportScan({ onComplete, repo, branch }: { onComplete: () => void; repo
   return <div><div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary"><Loader2 size={20} className="animate-spin" /></div><div><div className="font-mono text-[10px] uppercase tracking-[.18em] text-primary">Reading project</div><h2 className="mt-1 text-lg font-semibold">Understanding what is already here.</h2></div></div><div className="mt-8 space-y-3">{checks.map((check, i) => <div key={check} className={`flex items-center gap-3 rounded-lg border p-3 text-sm ${progress > i ? "border-primary/25 bg-primary/5" : "border-border bg-background"}`}><span className="grid size-6 place-items-center rounded-md bg-secondary">{progress > i ? <Check size={13} className="text-primary" /> : <Loader2 size={13} className={progress === i ? "animate-spin text-accent" : "text-muted-foreground/40"} />}</span>{check}{progress > i && <span className="ml-auto font-mono text-[9px] uppercase text-primary">done</span>}</div>)}</div><div className="mt-6 h-1.5 overflow-hidden rounded-full bg-secondary"><div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${Math.min(100, progress * 25)}%` }} /></div></div>;
 }
 
-const agentCatalog = [
+const agentCatalog: AgentItem[] = [
   { name: "Architect", role: "Plans the product and keeps decisions coherent.", framework: "Lyzr Core", status: "Ready", tone: "teal" as const, icon: WandSparkles, output: "Product brief + implementation plan" },
   { name: "Research", role: "Finds patterns, sources, and useful constraints.", framework: "CrewAI", status: "Working", tone: "amber" as const, icon: Search, output: "Ranked research notes" },
   { name: "UI Builder", role: "Turns approved intent into usable interface layers.", framework: "LangChain", status: "Ready", tone: "violet" as const, icon: Layers3, output: "Preview screens + components" },
@@ -304,6 +316,104 @@ function AgentsPage({ go, mode }: { go: (s: Screen) => void; mode: Mode }) {
   const [running, setRunning] = useState(false);
   const Icon = selected.icon;
   return <Shell go={go} mode={mode}><div className="min-h-[100dvh] bg-[#0b1116]"><header className="flex min-h-[72px] items-center justify-between border-b border-border/70 bg-sidebar px-5 lg:px-8"><div><div className="font-mono text-[10px] uppercase tracking-[.2em] text-primary">System surface</div><h1 className="mt-1 font-display text-2xl font-semibold">Agents</h1></div><div className="flex items-center gap-2"><Pill tone="teal"><span className="size-1.5 rounded-full bg-primary pulse-dot" /> 4 ready</Pill><Button onClick={() => setRunning(true)} className="px-3 py-2" testId="button-run-agent"><Play size={14} /> Run selected</Button></div></header><main className="mx-auto max-w-[1260px] p-5 lg:p-8"><div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]"><section><div className="mb-4 flex items-end justify-between"><div><h2 className="font-display text-2xl font-semibold">Your agent team</h2><p className="mt-1 text-sm text-muted-foreground">Every role has a purpose, a boundary, and an output you can inspect.</p></div><button className="hidden items-center gap-2 text-xs font-semibold text-primary sm:flex" data-testid="button-create-agent"><Plus size={14} /> Create agent</button></div><div className="grid gap-3">{agentCatalog.map(agent => { const AgentIcon = agent.icon; return <button key={agent.name} onClick={() => setSelected(agent)} className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${selected.name === agent.name ? "border-primary/45 bg-primary/5 shadow-[0_12px_35px_hsl(174_72%_52%_/_0.08)]" : "border-border bg-card hover:border-primary/25"}`} data-testid={`button-agent-${agent.name.toLowerCase()}`}><div className={`grid size-10 shrink-0 place-items-center rounded-xl ${agent.tone === "teal" ? "bg-primary/15 text-primary" : agent.tone === "amber" ? "bg-accent/15 text-accent" : agent.tone === "violet" ? "bg-violet-300/15 text-violet-200" : "bg-secondary text-muted-foreground"}`}><AgentIcon size={18} /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold">{agent.name}</span><Pill tone={agent.tone}>{agent.status}</Pill></div><p className="mt-1 text-xs leading-5 text-muted-foreground">{agent.role}</p><div className="mt-3 flex flex-wrap gap-3 font-mono text-[9px] text-muted-foreground"><span>{agent.framework}</span><span>·</span><span>{agent.output}</span></div></div><ChevronRight size={16} className="mt-2 text-muted-foreground" /></button>; })}</div></section><aside className="rounded-2xl border border-border bg-card p-6"><div className="flex items-start justify-between"><div className="flex items-center gap-3"><div className="grid size-11 place-items-center rounded-xl bg-primary/15 text-primary"><Icon size={20} /></div><div><div className="font-mono text-[10px] uppercase tracking-[.18em] text-primary">Agent detail</div><h2 className="mt-1 text-lg font-semibold">{selected.name}</h2></div></div><button className="rounded-lg p-2 text-muted-foreground hover:bg-secondary" data-testid="button-agent-settings"><Settings2 size={15} /></button></div><p className="mt-6 text-sm leading-6 text-muted-foreground">{selected.role}</p><div className="mt-6 grid grid-cols-2 gap-2"><div className="rounded-lg border border-border bg-background p-3"><div className="text-[10px] text-muted-foreground">Framework</div><div className="mt-1 text-xs font-semibold">{selected.framework}</div></div><div className="rounded-lg border border-border bg-background p-3"><div className="text-[10px] text-muted-foreground">Output</div><div className="mt-1 text-xs font-semibold">{selected.output}</div></div></div><div className="mt-6 border-t border-border pt-5"><div className="flex items-center justify-between"><div className="text-xs font-semibold">Tools & permissions</div><span className="font-mono text-[9px] text-primary">3 enabled</span></div><div className="mt-3 space-y-2">{["Read project files", "Write to isolated branch", "Ask for approval before deploy"].map(x => <div key={x} className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 size={13} className="text-primary" />{x}</div>)}</div></div><div className="mt-6 border-t border-border pt-5"><div className="flex items-center justify-between"><div className="text-xs font-semibold">Recent runs</div><span className="font-mono text-[9px] text-muted-foreground">today</span></div>{["Mapped the current workflow", "Proposed a simpler data model", "Waiting for your approval"].map((x, i) => <div key={x} className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><span className={`size-1.5 rounded-full ${i === 2 ? "bg-accent" : "bg-primary"}`} />{x}<span className="ml-auto font-mono text-[9px]">{i + 1}h</span></div>)}</div></aside></div><section className="mt-6 rounded-2xl border border-border bg-card p-6"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="font-mono text-[10px] uppercase tracking-[.18em] text-muted-foreground">Dual-mind canvas</div><h2 className="mt-1 font-display text-2xl font-semibold">See the handoffs, not just the output.</h2></div><Button variant="outline" onClick={() => go("workspace")} className="px-3 py-2" testId="button-open-agent-canvas"><Layers3 size={14} /> Open in workspace</Button></div><div className="mt-7 grid gap-3 md:grid-cols-3"><div className="rounded-xl border border-primary/30 bg-primary/5 p-4"><div className="flex items-center gap-2 text-xs font-semibold text-primary"><UserRound size={14} /> Your intent</div><p className="mt-2 text-xs leading-5 text-muted-foreground">Find meaningful patterns in customer signal.</p></div><div className="rounded-xl border border-accent/30 bg-accent/5 p-4"><div className="flex items-center gap-2 text-xs font-semibold text-accent"><Bot size={14} /> Research agent</div><p className="mt-2 text-xs leading-5 text-muted-foreground">Collecting and ranking sources.</p></div><div className="rounded-xl border border-violet-300/30 bg-violet-300/5 p-4"><div className="flex items-center gap-2 text-xs font-semibold text-violet-200"><Rocket size={14} /> Deploy agent</div><p className="mt-2 text-xs leading-5 text-muted-foreground">Waiting for approval before release.</p></div></div></section></main>{running && <div className="fixed bottom-5 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-full border border-primary/30 bg-card px-4 py-3 text-xs text-primary shadow-xl"><Loader2 size={14} className="animate-spin" /> {selected.name} is running<span className="text-muted-foreground">· live activity is updating</span><button onClick={() => setRunning(false)} className="ml-2 text-muted-foreground hover:text-foreground" data-testid="button-stop-agent"><X size={13} /></button></div>}</div></Shell>;
+}
+
+function AgentPageV2({ go, mode }: { go: (s: Screen) => void; mode: Mode }) {
+  const developer = mode === "developer";
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [framework, setFramework] = useState(developer ? "Lyzr Core" : "Guided build");
+  const [customAgents, setCustomAgents] = useState<AgentItem[]>([]);
+  const [selectedName, setSelectedName] = useState(agentCatalog[0].name);
+  const [notice, setNotice] = useState("");
+  const agents = [...agentCatalog, ...customAgents];
+  const selected = agents.find((agent) => agent.name === selectedName) ?? agents[0];
+  const DetailIcon = selected.icon;
+  const frameworkOptions = developer ? ["Lyzr Core", "CrewAI", "LangChain", "FastAPI + React"] : ["Guided build", "Lyzr Core", "Visual-first", "Fast prototype"];
+
+  useEffect(() => {
+    setFramework(developer ? "Lyzr Core" : "Guided build");
+  }, [developer]);
+
+  const addAgent = (draft: AgentDraft) => {
+    const created: AgentItem = {
+      name: draft.name,
+      role: draft.role,
+      framework: draft.framework,
+      model: draft.model,
+      status: "Ready",
+      tone: draft.tone,
+      icon: draft.iconKind === "developer" ? Code2 : WandSparkles,
+      output: draft.output,
+      tools: draft.tools,
+    };
+    setCustomAgents((current) => [...current, created]);
+    setSelectedName(created.name);
+    setBuilderOpen(false);
+    setNotice(`${created.name} is ready to run`);
+    window.setTimeout(() => setNotice(""), 3200);
+  };
+
+  return (
+    <Shell go={go} mode={mode}>
+      <div className="min-h-[100dvh] bg-[#0b1116]">
+        <header className="flex flex-wrap items-center justify-between gap-4 border-b border-border/70 bg-sidebar px-5 py-5 lg:px-8">
+          <div>
+            <div className={`font-mono text-[10px] uppercase tracking-[.2em] ${developer ? "text-accent" : "text-primary"}`}>{developer ? "Developer system surface" : "Creator system surface"}</div>
+            <h1 className="mt-1 font-display text-2xl font-semibold">Agents</h1>
+            <p className="mt-1 text-xs text-muted-foreground">{developer ? "Define runtime contracts, tools, and typed agent handoffs." : "Shape a focused agent without needing to configure a code runtime."}</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 rounded-lg border border-border bg-background px-2.5 py-2 text-[10px] text-muted-foreground">
+              <span className="hidden sm:inline">Agent framework</span>
+              <select value={framework} onChange={(event) => setFramework(event.target.value)} className="bg-transparent text-xs font-semibold text-foreground outline-none" data-testid="select-agent-framework">
+                {frameworkOptions.map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </label>
+            <Pill tone={developer ? "amber" : "teal"}><span className={`size-1.5 rounded-full ${developer ? "bg-accent" : "bg-primary"} pulse-dot`} /> {agents.filter((agent) => agent.status === "Ready").length} ready</Pill>
+            <Button onClick={() => setBuilderOpen(true)} className="px-3 py-2" testId="button-create-agent"><Plus size={14} /> Create agent</Button>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-[1260px] p-5 lg:p-8">
+          <div className={`mb-6 rounded-2xl border p-5 ${developer ? "border-accent/25 bg-accent/5" : "border-primary/25 bg-primary/5"}`}>
+            <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+              <div>
+                <div className={`font-mono text-[10px] uppercase tracking-[.18em] ${developer ? "text-accent" : "text-primary"}`}>{developer ? "Developer specification" : "Creator specification"}</div>
+                <h2 className="mt-2 font-display text-2xl font-semibold">{developer ? "Build agents you can inspect in code." : "Build agents around outcomes, not setup."}</h2>
+                <p className="mt-2 max-w-2xl text-xs leading-5 text-muted-foreground">{developer ? "Framework, model, temperature, system instructions, and explicit tools are captured before creation." : "Name the job, choose a model and capabilities, then review the first-run behavior before creation."}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-2 text-[10px] text-muted-foreground"><span className={`grid size-8 place-items-center rounded-lg ${developer ? "bg-accent/15 text-accent" : "bg-primary/15 text-primary"}`}>{developer ? <Code2 size={16} /> : <WandSparkles size={16} />}</span><span>{framework}<br /><span className="text-foreground">{developer ? "Runtime ready" : "Guided setup"}</span></span></div>
+            </div>
+          </div>
+
+          <div className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]">
+            <section>
+              <div className="mb-4 flex items-end justify-between gap-3">
+                <div><h2 className="font-display text-2xl font-semibold">Your agent team</h2><p className="mt-1 text-sm text-muted-foreground">Every role has a purpose, a boundary, and an output you can inspect.</p></div>
+                <button onClick={() => setBuilderOpen(true)} className={`inline-flex items-center gap-2 text-xs font-semibold ${developer ? "text-accent" : "text-primary"}`} data-testid="button-create-agent-inline"><Plus size={14} /> Create agent</button>
+              </div>
+              <div className="grid gap-3">
+                {agents.map((agent) => {
+                  const AgentIcon = agent.icon;
+                  return <button key={agent.name} onClick={() => setSelectedName(agent.name)} className={`flex items-start gap-4 rounded-xl border p-4 text-left transition-all ${selected.name === agent.name ? (developer ? "border-accent/45 bg-accent/5 shadow-[0_12px_35px_hsl(34_90%_63%_/_0.08)]" : "border-primary/45 bg-primary/5 shadow-[0_12px_35px_hsl(174_72%_52%_/_0.08)]") : "border-border bg-card hover:border-primary/25"}`} data-testid={`button-agent-${agent.name.toLowerCase().replaceAll(" ", "-")}`}><div className={`grid size-10 shrink-0 place-items-center rounded-xl ${agent.tone === "teal" ? "bg-primary/15 text-primary" : agent.tone === "amber" ? "bg-accent/15 text-accent" : agent.tone === "violet" ? "bg-violet-300/15 text-violet-200" : "bg-secondary text-muted-foreground"}`}><AgentIcon size={18} /></div><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><span className="text-sm font-semibold">{agent.name}</span><Pill tone={agent.tone}>{agent.status}</Pill>{agent.model && <span className="rounded-full border border-border bg-secondary px-2 py-1 font-mono text-[9px] text-muted-foreground">{agent.model}</span>}</div><p className="mt-1 text-xs leading-5 text-muted-foreground">{agent.role}</p><div className="mt-3 flex flex-wrap gap-3 font-mono text-[9px] text-muted-foreground"><span>{agent.framework}</span><span>·</span><span>{agent.output}</span></div></div><ChevronRight size={16} className="mt-2 text-muted-foreground" /></button>;
+                })}
+              </div>
+            </section>
+
+            <aside className="rounded-2xl border border-border bg-card p-6">
+              <div className="flex items-start justify-between"><div className="flex items-center gap-3"><div className={`grid size-11 place-items-center rounded-xl ${developer ? "bg-accent/15 text-accent" : "bg-primary/15 text-primary"}`}><DetailIcon size={20} /></div><div><div className="font-mono text-[10px] uppercase tracking-[.18em] text-primary">Agent detail</div><h2 className="mt-1 text-lg font-semibold">{selected.name}</h2></div></div><button className="rounded-lg p-2 text-muted-foreground hover:bg-secondary" data-testid="button-agent-settings"><Settings2 size={15} /></button></div>
+              <p className="mt-6 text-sm leading-6 text-muted-foreground">{selected.role}</p>
+              <div className="mt-6 grid grid-cols-2 gap-2"><div className="rounded-lg border border-border bg-background p-3"><div className="text-[10px] text-muted-foreground">Model</div><div className="mt-1 text-xs font-semibold">{selected.model ?? "Managed default"}</div></div><div className="rounded-lg border border-border bg-background p-3"><div className="text-[10px] text-muted-foreground">Framework</div><div className="mt-1 text-xs font-semibold">{selected.framework}</div></div><div className="rounded-lg border border-border bg-background p-3"><div className="text-[10px] text-muted-foreground">{developer ? "Runtime output" : "Agent output"}</div><div className="mt-1 text-xs font-semibold">{selected.output}</div></div><div className="rounded-lg border border-border bg-background p-3"><div className="text-[10px] text-muted-foreground">Tools</div><div className="mt-1 text-xs font-semibold">{selected.tools?.length ?? 3} enabled</div></div></div>
+              <div className="mt-6 border-t border-border pt-5"><div className="flex items-center justify-between"><div className="text-xs font-semibold">{developer ? "Runtime permissions" : "Capabilities"}</div><span className={`font-mono text-[9px] ${developer ? "text-accent" : "text-primary"}`}>{selected.tools?.length ?? 3} enabled</span></div><div className="mt-3 space-y-2">{(selected.tools ?? ["Read project files", "Write to isolated branch", "Ask for approval before deploy"]).map((tool) => <div key={tool} className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 size={13} className={developer ? "text-accent" : "text-primary"} />{tool}</div>)}</div></div>
+              <div className="mt-6 border-t border-border pt-5"><div className="flex items-center justify-between"><div className="text-xs font-semibold">Recent runs</div><span className="font-mono text-[9px] text-muted-foreground">today</span></div>{["Mapped the current workflow", "Proposed a simpler data model", "Waiting for your approval"].map((item, index) => <div key={item} className="mt-3 flex items-center gap-2 text-xs text-muted-foreground"><span className={`size-1.5 rounded-full ${index === 2 ? "bg-accent" : "bg-primary"}`} />{item}<span className="ml-auto font-mono text-[9px]">{index + 1}h</span></div>)}</div>
+            </aside>
+          </div>
+        </main>
+        {notice && <div className="fixed bottom-5 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-2 rounded-full border border-primary/30 bg-card px-4 py-3 text-xs text-primary shadow-xl" data-testid="status-agent-created"><Check size={14} /> {notice}</div>}
+        {builderOpen && <AgentBuilder mode={mode} defaultFramework={framework} onClose={() => setBuilderOpen(false)} onCreate={addAgent} />}
+      </div>
+    </Shell>
+  );
 }
 
 function IntegrationsPage({ go, mode }: { go: (s: Screen) => void; mode: Mode }) {
@@ -323,7 +433,7 @@ function ActivityPage({ go, mode }: { go: (s: Screen) => void; mode: Mode }) {
 }
 
 function SettingsPage({ go, mode }: { go: (s: Screen) => void; mode: Mode }) {
-  return <Shell go={go} mode={mode}><div className="min-h-[100dvh] bg-[#0b1116]"><header className="border-b border-border/70 bg-sidebar px-5 py-7 lg:px-8"><div className="font-mono text-[10px] uppercase tracking-[.2em] text-primary">Workspace controls</div><h1 className="mt-2 font-display text-3xl font-semibold">Settings</h1><p className="mt-2 text-sm text-muted-foreground">Keep the project understandable, secure, and ready to ship.</p></header><main className="mx-auto max-w-[900px] p-5 lg:p-8"><div className="space-y-3">{[["Project identity", "Signal Room · customer intelligence command center"], ["Default framework", "Lyzr Core · shared with all agents"], ["Environment variables", "3 values need review before production"], ["Team access", "Alex Morgan · Owner"], ["Notifications", "Agent approvals and deployment failures"]].map(([title, detail]) => <button key={title} className="flex w-full items-center gap-4 rounded-xl border border-border bg-card p-5 text-left hover:border-primary/30" data-testid={`button-setting-${title.toLowerCase().replaceAll(" ", "-")}`}><div className="grid size-10 place-items-center rounded-lg bg-secondary text-muted-foreground"><Settings2 size={17} /></div><div className="min-w-0 flex-1"><div className="text-sm font-semibold">{title}</div><div className="mt-1 text-xs text-muted-foreground">{detail}</div></div><ChevronRight size={16} className="text-muted-foreground" /></button>)}</div></main></div></Shell>;
+  return <Shell go={go} mode={mode}><div className="min-h-[100dvh] bg-[#0b1116]"><header className="border-b border-border/70 bg-sidebar px-5 py-7 lg:px-8"><div className="font-mono text-[10px] uppercase tracking-[.2em] text-primary">Workspace controls</div><h1 className="mt-2 font-display text-3xl font-semibold">Settings</h1><p className="mt-2 text-sm text-muted-foreground">Keep the project understandable, secure, and ready to ship.</p></header><main className="mx-auto max-w-[900px] p-5 lg:p-8"><div className="space-y-3">{[["Project identity", "Signal Room · customer intelligence command center"], ["Environment variables", "3 values need review before production"], ["Team access", "Alex Morgan · Owner"], ["Notifications", "Agent approvals and deployment failures"]].map(([title, detail]) => <button key={title} className="flex w-full items-center gap-4 rounded-xl border border-border bg-card p-5 text-left hover:border-primary/30" data-testid={`button-setting-${title.toLowerCase().replaceAll(" ", "-")}`}><div className="grid size-10 place-items-center rounded-lg bg-secondary text-muted-foreground"><Settings2 size={17} /></div><div className="min-w-0 flex-1"><div className="text-sm font-semibold">{title}</div><div className="mt-1 text-xs text-muted-foreground">{detail}</div></div><ChevronRight size={16} className="text-muted-foreground" /></button>)}</div></main></div></Shell>;
 }
 
 function CodeStudioPage({ go, mode }: { go: (s: Screen) => void; mode: Mode }) {
@@ -334,32 +444,16 @@ function CodeStudioPage({ go, mode }: { go: (s: Screen) => void; mode: Mode }) {
   return <Shell go={go} mode={mode}><div className="min-h-[100dvh] bg-[#0b1116]"><header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/70 bg-sidebar px-5 py-5 lg:px-8"><div><div className="flex items-center gap-2 text-sm font-semibold"><span className="size-2 rounded-full bg-primary pulse-dot" /> Signal Room <span className="text-border">/</span> Code studio</div><div className="mt-1 font-mono text-[9px] text-muted-foreground">architect/signal-room · isolated branch</div></div><div className="flex items-center gap-2"><Pill tone="teal"><Check size={11} /> Type checks passed</Pill><Button onClick={() => go("deployments")} className="px-3 py-2" testId="button-code-deploy"><Rocket size={14} /> Deploy</Button></div></header><main className="grid min-h-[calc(100dvh-88px)] lg:grid-cols-[220px_1fr_280px]"><aside className="border-b border-border bg-sidebar p-4 lg:border-b-0 lg:border-r"><div className="mb-3 flex items-center justify-between"><span className="font-mono text-[10px] uppercase tracking-[.18em] text-muted-foreground">Files</span><Plus size={14} className="text-muted-foreground" /></div><div className="space-y-1">{files.map(path => <button key={path} onClick={() => setFile(path)} className={`flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left font-mono text-[10px] ${file === path ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary hover:text-foreground"}`} data-testid={`button-code-file-${path.split("/").pop()}`}><FileCode2 size={13} />{path}</button>)}</div><div className="mt-8 border-t border-border pt-4"><div className="font-mono text-[10px] uppercase tracking-[.18em] text-muted-foreground">Branch</div><div className="mt-3 flex items-center gap-2 rounded-lg border border-border bg-background p-3 text-xs"><GitBranch size={14} className="text-primary" /> architect/signal-room</div><button onClick={() => go("activity")} className="mt-3 flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground" data-testid="button-code-activity"><Activity size={13} /> View activity</button></div></aside><section className="min-w-0 border-b border-border lg:border-b-0 lg:border-r"><div className="flex items-center justify-between border-b border-border px-5 py-3"><div className="flex items-center gap-2 font-mono text-[10px] text-foreground"><FileCode2 size={13} className="text-primary" /> {file}</div><div className="flex items-center gap-3 text-[10px] text-muted-foreground"><span>3 changes</span><span className="text-primary">Saved</span></div></div><div className="overflow-auto p-5 font-mono text-[11px] leading-7 text-muted-foreground"><div><span className="mr-5 text-border">01</span><span className="text-violet-200">export async function</span> <span className="text-accent">researchSignals</span>(query: <span className="text-primary">string</span>) {"{"}</div><div><span className="mr-5 text-border">02</span>  <span className="text-violet-200">const</span> sources = <span className="text-primary">await</span> getSources(query);</div><div className="my-1 rounded bg-primary/10 px-2 text-foreground"><span className="mr-3 text-border">03</span>  <span className="text-violet-200">return</span> rankByConfidence(sources).slice(0, 12);</div><div><span className="mr-5 text-border">04</span>{"}"}</div><div className="mt-8 rounded-xl border border-accent/25 bg-accent/5 p-4 font-sans text-xs leading-5"><div className="flex items-center gap-2 font-semibold text-accent"><Bot size={14} /> Code agent suggestion</div><p className="mt-2 text-muted-foreground">This change keeps ranking deterministic and limits the response size before the preview consumes it.</p><div className="mt-4 flex gap-2"><Button variant="outline" className="px-3 py-2 text-xs" testId="button-accept-code-change"><Check size={13} /> Accept</Button><Button variant="ghost" className="px-3 py-2 text-xs" testId="button-reject-code-change">Dismiss</Button></div></div></div><div className="border-t border-border p-4"><div className="flex items-center gap-2 font-mono text-[9px] uppercase tracking-[.16em] text-muted-foreground"><Terminal size={12} className="text-primary" /> Checks</div><div className="mt-3 grid gap-2 sm:grid-cols-3"><div className="rounded-lg border border-border bg-background p-3 text-xs"><Check size={13} className="inline text-primary" /> Typecheck</div><div className="rounded-lg border border-border bg-background p-3 text-xs"><Check size={13} className="inline text-primary" /> Unit tests</div><div className="rounded-lg border border-border bg-background p-3 text-xs"><Loader2 size={13} className="inline animate-spin text-accent" /> Preview build</div></div></div></section><aside className="bg-sidebar p-5"><div className="flex items-center gap-2 text-sm font-semibold"><Bot size={15} className="text-primary" /> Ask the code agent</div><p className="mt-2 text-xs leading-5 text-muted-foreground">Describe a change in plain language. The agent will propose a diff before writing to your branch.</p><textarea value={request} onChange={e => setRequest(e.target.value)} placeholder="e.g. Add an empty state for no signals…" className="mt-5 min-h-[120px] w-full resize-none rounded-lg border border-input bg-background p-3 text-xs leading-5 outline-none placeholder:text-muted-foreground/50 focus:border-primary" data-testid="input-code-agent-request" /><Button disabled={!request.trim()} onClick={() => { setSent(true); setRequest(""); }} className="mt-3 w-full py-2.5 text-xs" testId="button-send-code-request"><Send size={13} /> Ask for a diff</Button>{sent && <div className="mt-4 rounded-lg border border-primary/25 bg-primary/5 p-3 text-xs leading-5 text-primary" data-testid="status-code-request"><Check size={13} className="mr-1 inline" /> Proposed change added to review.</div>}<div className="mt-8 border-t border-border pt-5"><div className="font-mono text-[9px] uppercase tracking-[.16em] text-muted-foreground">Terminal</div><div className="mt-3 rounded-lg border border-border bg-background p-3 font-mono text-[10px] leading-5 text-muted-foreground"><div><span className="text-primary">$</span> pnpm test</div><div className="text-primary">✓ 18 passed</div><div><span className="text-primary">$</span> pnpm build</div><div className="text-accent">building preview…</div></div></div></aside></main></div></Shell>;
 }
 
-function FrameworkNavSection({ go, mode }: { go: (s: Screen) => void; mode: Mode }) {
+function SurfaceNavSection({ go, mode }: { go: (s: Screen) => void; mode: Mode }) {
   const developer = mode === "developer";
-  const [framework, setFramework] = useState(developer ? "Lyzr Core" : "Guided build");
-  useEffect(() => setFramework(developer ? "Lyzr Core" : "Guided build"), [developer]);
   const surfaces = developer
     ? [["agents", "Agent team", Bot], ["code", "Code studio", Code2], ["integrations", "Integrations", Link2], ["deployments", "Environments", Rocket], ["activity", "Build activity", Activity]] as const
     : [["agents", "Agents", Bot], ["integrations", "Connections", Link2], ["deployments", "Publish", Rocket], ["activity", "Activity", Activity]] as const;
 
-  return <section className={`framework-nav-section ${developer ? "border-accent/20 bg-accent/5" : ""}`} data-testid="framework-nav-section">
-    <div className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.14em] text-muted-foreground">
-      {developer ? <SquareTerminal size={13} className="text-accent" /> : <WandSparkles size={13} className="text-primary" />}
-      {developer ? "Agent framework" : "Build approach"}
-    </div>
-    <select
-      value={framework}
-      onChange={e => setFramework(e.target.value)}
-      className="mt-3 w-full rounded-md border border-border bg-background px-2.5 py-2 text-xs text-foreground outline-none transition-colors focus:border-primary"
-      data-testid="select-framework-nav"
-    >
-      {(developer ? ["Lyzr Core", "CrewAI", "LangChain", "FastAPI + React"] : ["Guided build", "Visual-first", "Fast prototype"]).map(x => <option key={x}>{x}</option>)}
-    </select>
-    <div className="mt-4 border-t border-border/70 pt-3">
-      <div className="mb-2 px-1 font-mono text-[9px] uppercase tracking-[.16em] text-muted-foreground">{developer ? "Developer surfaces" : "Workspace surfaces"}</div>
-      <div className="space-y-1">
-        {surfaces.map(([screen, label, Icon]) => <button key={screen} onClick={() => go(screen)} className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-xs text-muted-foreground hover:bg-secondary hover:text-foreground" data-testid={`nav-${screen}`}><Icon size={14} />{label}</button>)}
-      </div>
+  return <section className="mt-5 border-t border-border/70 pt-4" data-testid="surface-nav-section">
+    <div className="mb-2 px-2 font-mono text-[9px] uppercase tracking-[.2em] text-muted-foreground">{developer ? "Build surfaces" : "Workspace surfaces"}</div>
+    <div className="space-y-1">
+      {surfaces.map(([screen, label, Icon]) => <button key={screen} onClick={() => go(screen)} className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground" data-testid={`nav-${screen}`}><Icon size={16} />{label}</button>)}
     </div>
   </section>;
 }
@@ -377,7 +471,7 @@ function App() {
     if (screen === "launchpad") return <LaunchpadV2 go={go} setPrompt={setPrompt} />;
     if (screen === "prompt") return <PromptFlow go={go} prompt={prompt} setPrompt={setPrompt} />;
     if (screen === "import") return <ImportFlow go={go} />;
-    if (screen === "agents") return <AgentsPage go={go} mode={mode} />;
+    if (screen === "agents") return <AgentPageV2 go={go} mode={mode} />;
     if (screen === "code") return <CodeStudioPage go={go} mode={mode} />;
     if (screen === "integrations") return <IntegrationsPage go={go} mode={mode} />;
     if (screen === "deployments") return <DeploymentsPage go={go} mode={mode} />;
