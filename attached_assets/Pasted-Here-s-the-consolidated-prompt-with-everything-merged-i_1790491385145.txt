@@ -1,0 +1,134 @@
+Here's the consolidated prompt with everything merged in — the original 5 fixes plus the two page-level cleanup items from the last two messages.
+
+```
+In my Architect app, fix the "Create agent" flow (Agents screen, Creator and Developer 
+modes) to resolve the following issues:
+
+===========================================
+1. REMOVE ALL PAGE-LEVEL "AGENT FRAMEWORK" CONTROLS
+===========================================
+Framework selection must ONLY exist inside the Create Agent flow itself (step 3 below), 
+per-agent — never as a standing page-level or sidebar control. Remove ALL of the following:
+
+- The "Agent framework" dropdown in the left sidebar (above "Developer surfaces" / 
+  "Workspace surfaces") showing Lyzr Core / CrewAI / LangChain / FastAPI + React as a 
+  global setting.
+- The "Agent framework" row at the TOP of the Developer Agents page's main content area 
+  (the one showing "Agent framework · Lyzr Core CrewAI LangChain FastAPI + React · 4 ready").
+- The "Developer specification" block below it (showing "Build agents you can inspect in 
+  code..." with "Lyzr Core · Runtime ready" tags).
+
+Remove any code/state that reads these removed values elsewhere in the app. After removal, 
+adjust vertical spacing so the page flows cleanly with no gaps.
+
+===========================================
+2. ONLY ONE "CREATE AGENT" BUTTON PER PAGE
+===========================================
+Each Agents page (Creator mode and Developer mode) should have exactly ONE "Create agent" 
+button — remove the duplicate. Keep the one positioned near the page header (next to 
+"Agents · Define runtime contracts, tools, and typed agent handoffs" in Developer mode, 
+and the equivalent header in Creator mode) and remove the second one that currently sits 
+next to the "Your agent team" heading further down the page.
+
+===========================================
+3. TWO DIFFERENT "CREATE AGENT" BUTTON DESTINATIONS
+===========================================
+The single "Create agent" button in each mode should open genuinely different configure 
+flows (not the same form with hidden fields):
+
+CREATOR MODE "Create agent" → opens the CREATOR CONFIGURE FLOW (section 4a below)
+DEVELOPER MODE "Create agent" → opens the DEVELOPER CONFIGURE FLOW (section 4b below)
+
+Both flows end at the same shared CONFIRMATION + PLAYGROUND step (section 5).
+
+===========================================
+4a. CREATOR CONFIGURE FLOW — 2 steps: Configure → Review
+===========================================
+Keep the existing step structure ("01 Configure · Identity, model, tools" / 
+"02 Review · Check the run contract") but fix these fields:
+
+STEP 01 — Configure
+- "Agent name" (required) — text input
+- "What should it do?" (required) — text input, this is the Goal
+- "Behavior guidance" — textarea for instructions
+- "Model" dropdown — Lyzr Auto / GPT-4o mini / Claude 3.5 Sonnet (fine as-is)
+- "Agent framework" dropdown — options must be Lyzr Core / CrewAI / LangChain / 
+  FastAPI + React ONLY (do not mix in "Guided build" or "Visual-first" — those are not 
+  frameworks)
+- A SEPARATE field labeled "Build approach" — Guided build / Visual-first / Fast prototype 
+  (its own distinct field, never merged with Agent framework)
+- "Response style" — Balanced / Concise / Detailed
+- "Allowed tools" — ONE section only, with 4 checkboxes: Web research, Knowledge files, 
+  Memory, Human approval (do not create a second "Capabilities" list duplicating any of 
+  these items under a different label)
+
+STEP 02 — Review
+- Build summary panel: Model, Framework, Build approach, Tools enabled (count) — pulling 
+  from the corrected fields above
+- Buttons: "Cancel" and "Create agent" (this is the final action — the flow must not 
+  dead-end here with no way to actually finish creating the agent)
+
+===========================================
+4b. DEVELOPER CONFIGURE FLOW — same 2-step structure, more technical depth
+===========================================
+Same "01 Configure / 02 Review" pattern, but:
+- "Model" dropdown shows real-looking IDs scoped to selected framework (e.g. 
+  "lyzr-core-1-pro", "crewai-claude-agent", "langchain-claude-sonnet", or 
+  "custom-endpoint" + dummy URL input)
+- Add a collapsed "Advanced" toggle revealing Temperature and Top P sliders
+- "Agent framework" dropdown — Lyzr Core / CrewAI / LangChain / FastAPI + React 
+  (identical options to Creator mode — only Model options differ by mode, not Framework)
+- No separate "Build approach" field in Developer mode — that's Creator-only
+- "Allowed tools" — ONE section, full technical checklist: Read project files, Write to 
+  isolated branch (on by default), Ask for approval before deploy (on by default), 
+  Access integrations, Web research, Memory
+- Review step: same Build summary panel + "Cancel" / "Create agent" buttons
+
+===========================================
+5. SHARED — AFTER "Create agent" IS CLICKED (both modes, same behavior)
+===========================================
+On clicking "Create agent":
+
+1. Button shows brief loading state ("Creating...")
+2. Transition to a CONFIRMATION screen (same page, form replaced, not a new route):
+   - Teal checkmark icon + heading: "[Agent name] is ready."
+   - Subtext: "Test it below to see how it responds, then deploy when you're happy."
+3. Immediately below, show a PLAYGROUND section on the same screen:
+   - Empty state: "Type a message to see how [Agent name] responds."
+   - Chat input at the bottom: "Message [Agent name]..." + send button
+   - On sending a message: show user message, then a dummy reply templated from 
+     the Goal/Instructions text entered in Configure, formatted according to 
+     Output format if one was set (plain text as default if no Output format field exists)
+4. Two buttons below the playground:
+   - "Back to team" — closes this flow, returns to Agent Team grid, new agent card 
+     appears with status "Ready"
+   - "Deploy agent" (primary teal) — reuses the app's existing Deploy flow/modal 
+     (build-log → live URL pattern), relabeled for an agent context (e.g. "Registering 
+     endpoint" → "Running test call" → "Your agent is live" with dummy endpoint URL + 
+     Copy button). On completion, update the agent's status to "Live"
+5. The agent must be added to the Agent Team grid's state the moment "Create agent" is 
+   clicked (step 1 above), not later — so even if the user closes the tab mid-playground-
+   testing, the agent already exists in the team list.
+
+===========================================
+6. FIX DUPLICATE/GENERIC "RECENT RUNS" TEXT
+===========================================
+Every agent (Architect, Research, and any newly created agent) currently shows the exact 
+same 3 run entries: "Mapped the current workflow", "Proposed a simpler data model", 
+"Waiting for your approval". Fix this:
+- Write distinct dummy run text per agent, matching its actual role. For a newly created 
+  agent, generate run text from its Goal/Instructions rather than using this shared 
+  hardcoded list (e.g. simple templating: "Started: [goal]", "Completed first pass", 
+  "Waiting for your review")
+- Keep timestamps varied (1h, 2h, 3h ago style) as before
+
+===========================================
+GENERAL RULES
+===========================================
+All state throughout remains local/component state only — no real backend or LLM calls — 
+fully dummy but fully clickable end-to-end, including the playground replies and deploy 
+sequence.
+
+Match existing dark theme, teal accent, spacing, and typography already used across the 
+app's Configure/Review screens, Agent detail panel, and Deploy modal.
+```
